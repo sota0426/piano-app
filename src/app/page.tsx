@@ -11,11 +11,11 @@ export default function Home() {
       disabled: false,      
     },
     {
-      title: "開発中",
-      description: "",
-      path: "/kanjiate", 
-      disabled: true,
-    },    // 追加クイズがあればここに追記
+      title: "リズム当てゲーム",
+      description: "リズムパターンを当てるクイズ",
+      path: "/rhythm_quiz",
+      disabled: true,      
+    },
   ]
 
 

@@ -12,7 +12,8 @@ const PianoQuizGame = () => {
   const [score, setScore] = useState({ correct: 0, total: 0 });
   const [isPlayingQuiz, setIsPlayingQuiz] = useState(false);
   const [showAnswer, setShowAnswer] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(false);
 
   const router = useRouter();
   
@@ -69,23 +70,18 @@ const PianoQuizGame = () => {
     
     switch (settings.noteRange) {
       case 'basic4':
-        // 基本の4音：ド・レ・ミ・ファ
         notes = ['C4', 'D4', 'E4', 'F4'];
         break;
       case 'high4':
-        // 高音の4音：ソ・ラ・シ・ド
         notes = ['G4', 'A4', 'B4', 'C5'];
         break;
       case 'diatonic8':
-        // ドレミファソラシド（全音階8音）
         notes = ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'C5'];
         break;
       case 'white12':
-        // 白鍵のみ（12音）
         notes = pianoKeys.filter(key => key.type === 'white').map(key => key.note);
         break;
       case 'all18':
-        // 全ての音（白鍵 + 黒鍵、18音）
         notes = pianoKeys.map(key => key.note);
         break;
       default:
@@ -203,17 +199,14 @@ const PianoQuizGame = () => {
       const frequency = noteFrequencies[note];
       
       if (frequency) {
-        // Play sound without visual feedback
         playTone(frequency, 0.8);
       }
       
-      // Wait between notes
       if (i < currentQuiz.length - 1) {
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
     
-    // Wait a bit after the last note
     await new Promise(resolve => setTimeout(resolve, 500));
     setIsPlayingQuiz(false);
   };
@@ -222,16 +215,14 @@ const PianoQuizGame = () => {
   const handleNoteInput = (note: string) => {
     if (!currentQuiz || quizResult === 'correct' || isPlayingQuiz) return;
     
-    // Check if this note is available in current settings
     const availableNotes = getAvailableNotes();
     if (!availableNotes.includes(note)) return;
     
-    playNote(note as keyof typeof noteFrequencies, true); // Show visual feedback for user input
+    playNote(note as keyof typeof noteFrequencies, true);
     
     const newAnswer = [...userAnswer, note];
     setUserAnswer(newAnswer);
     
-    // Check if answer is complete
     if (newAnswer.length === currentQuiz.length) {
       const isCorrect = newAnswer.every((note, index) => note === currentQuiz[index]);
       
@@ -288,216 +279,245 @@ const PianoQuizGame = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-            <div className="max-w-6xl mx-auto">
-          <button
-            onClick={() => router.push("/")}
-            className="rounded-md bg-gray-200 px-4 py-2 text-sm text-gray-700 hover:bg-gray-300"
-          >
-            ← タイトルに戻る
-          </button>                      
-        <h1 className="text-4xl font-bold text-indigo-800 text-center mb-8 mt-12">
+    <div className="h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between p-2 bg-white/80 backdrop-blur-sm shadow-sm">
+        <button
+          onClick={() => setShowMenu(!showMenu)}
+          className="rounded-md bg-gray-200 px-3 py-2 text-gray-700 hover:bg-gray-300 relative"
+        >
+          <div className="flex flex-col gap-0.5">
+            <div className="w-4 h-0.5 bg-gray-600"></div>
+            <div className="w-4 h-0.5 bg-gray-600"></div>
+            <div className="w-4 h-0.5 bg-gray-600"></div>
+          </div>
+        </button>
+        
+        <h1 className="text-xl font-bold text-indigo-800 flex items-center gap-2">
           🎹 ピアノ音当てクイズ
         </h1>
-
         
-        {/* Score Display */}
-        <div className="flex justify-center mb-6">
-          <div className="bg-white rounded-lg shadow-md p-4 text-center">
-            <div className="text-2xl font-bold text-gray-800">
-              スコア: {score.correct} / {score.total}
-            </div>
-            <div className="text-sm text-gray-600">
-              正答率: {score.total > 0 ? Math.round((score.correct / score.total) * 100) : 0}%
-            </div>
-          </div>
-        </div>
+        <button
+          onClick={() => setShowInstructions(!showInstructions)}
+          className="rounded-md bg-indigo-100 px-3 py-2 text-indigo-700 hover:bg-indigo-200"
+        >
+          ？
+        </button>
+      </div>
 
-        {/* Settings Panel */}
-        <div className="flex justify-center mb-6">
-          <div className="bg-white rounded-lg shadow-md p-4" style={{width: '736px'}}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-800">設定</h3>
+      {/* Menu Modal */}
+      {showMenu && (
+        <div className="absolute inset-0 bg-black/50 flex items-start justify-start z-50">
+          <div className="bg-white rounded-r-lg p-6 h-full min-w-80 shadow-xl">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-bold">メニュー</h3>
               <button
-                onClick={() => setShowSettings(!showSettings)}
-                className="px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors text-sm"
+                onClick={() => setShowMenu(false)}
+                className="text-gray-500 hover:text-gray-700 text-xl"
               >
-                {showSettings ? '閉じる' : '設定を変更'}
+                ✕
               </button>
             </div>
             
-            {showSettings && (
-              <div className="space-y-4 border-t pt-4">
-                {/* Number of notes */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    出題音数
-                  </label>
-                  <div className="flex gap-4">
-                    <div>
-                      <label className="text-sm text-gray-600">最小</label>
-                      <select
-                        value={settings.minNotes}
-                        onChange={(e) => setSettings(prev => ({ ...prev, minNotes: parseInt(e.target.value) }))}
-                        className="ml-2 px-2 py-1 border rounded"
-                      >
-                        <option value={1}>1音</option>
-                        <option value={2}>2音</option>
-                        <option value={3}>3音</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-sm text-gray-600">最大</label>
-                      <select
-                        value={settings.maxNotes}
-                        onChange={(e) => setSettings(prev => ({ ...prev, maxNotes: parseInt(e.target.value) }))}
-                        className="ml-2 px-2 py-1 border rounded"
-                      >
-                        <option value={1}>1音</option>
-                        <option value={2}>2音</option>
-                        <option value={3}>3音</option>
-                        <option value={4}>4音</option>
-                        <option value={5}>5音</option>
-                      </select>
-                    </div>
+            <div className="space-y-6">
+              {/* Score Details */}
+              <div>
+                <h4 className="font-medium text-gray-800 mb-2">スコア</h4>
+                <div className="bg-gray-50 p-3 rounded">
+                  <div className="text-2xl font-bold text-gray-800 mb-1">
+                    {score.correct} / {score.total}
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    正答率: {score.total > 0 ? Math.round((score.correct / score.total) * 100) : 0}%
                   </div>
                 </div>
+              </div>
 
-                {/* Note range */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    使用する音の範囲
-                  </label>
-                  <select
-                    value={settings.noteRange}
-                    onChange={(e) => setSettings(prev => ({ ...prev, noteRange: e.target.value }))}
-                    className="px-3 py-2 border rounded w-full"
-                  >
-                    <option value="basic4">基本4音：ド・レ・ミ・ファ（超簡単）</option>
-                    <option value="high4">高音4音：ソ・ラ・シ・ド（超簡単）</option>
-                    <option value="diatonic8">ドレミファソラシド（簡単）</option>
-                    <option value="white12">白鍵のみ（中級）</option>
-                    <option value="all18">全ての音（上級）</option>
-                  </select>
+              {/* Settings */}
+              <div>
+                <h4 className="font-medium text-gray-800 mb-3">設定</h4>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-2">音数設定</label>
+                    <div className="flex gap-3">
+                      <div>
+                        <label className="text-xs text-gray-500">最小</label>
+                        <select
+                          value={settings.minNotes}
+                          onChange={(e) => setSettings(prev => ({ ...prev, minNotes: parseInt(e.target.value) }))}
+                          className="ml-1 px-2 py-1 border rounded text-sm"
+                        >
+                          <option value={1}>1音</option>
+                          <option value={2}>2音</option>
+                          <option value={3}>3音</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-500">最大</label>
+                        <select
+                          value={settings.maxNotes}
+                          onChange={(e) => setSettings(prev => ({ ...prev, maxNotes: parseInt(e.target.value) }))}
+                          className="ml-1 px-2 py-1 border rounded text-sm"
+                        >
+                          <option value={1}>1音</option>
+                          <option value={2}>2音</option>
+                          <option value={3}>3音</option>
+                          <option value={4}>4音</option>
+                          <option value={5}>5音</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-2">音の範囲</label>
+                    <select
+                      value={settings.noteRange}
+                      onChange={(e) => setSettings(prev => ({ ...prev, noteRange: e.target.value }))}
+                      className="w-full px-3 py-2 border rounded text-sm"
+                    >
+                      <option value="basic4">基本4音：ド・レ・ミ・ファ（超簡単）</option>
+                      <option value="high4">高音4音：ソ・ラ・シ・ド（超簡単）</option>
+                      <option value="diatonic8">ドレミファソラシド（簡単）</option>
+                      <option value="white12">白鍵のみ（中級）</option>
+                      <option value="all18">全ての音（上級）</option>
+                    </select>
+                  </div>
                 </div>
               </div>
-            )}
-            
-            {!showSettings && (
-              <div className="text-sm text-gray-600">
-                現在の設定: {settings.minNotes}～{settings.maxNotes}音, {getNoteRangeDescription()}
+
+              {/* Navigation */}
+              <div className="border-t pt-4">
+                <button
+                  onClick={() => router.push("/")}
+                  className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                >
+                  ← タイトルに戻る
+                </button>
               </div>
-            )}
+            </div>
           </div>
         </div>
+      )}
 
-        {/* Quiz Controls */}
-        <div className="flex justify-center mb-8">
-          <div className="bg-white rounded-lg shadow-md p-6" style={{width: '736px'}}>
-            <div className="flex gap-4 items-center justify-center mb-4">
+      {/* Instructions Modal */}
+      {showInstructions && (
+        <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md mx-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold">遊び方</h3>
               <button
-                onClick={generateQuiz}
-                disabled={isPlayingQuiz}
-                className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
+                onClick={() => setShowInstructions(false)}
+                className="text-gray-500 hover:text-gray-700"
               >
-                新しい問題
+                ✕
               </button>
-              
-              <button
-                onClick={playQuizSequence}
-                disabled={!currentQuiz || isPlayingQuiz}
-                className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium flex items-center gap-2"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M8 5v14l11-7z"/>
-                </svg>
-                {isPlayingQuiz ? '再生中...' : '問題を聞く'}
-              </button>
-              
-              {currentQuiz && (
+            </div>
+            <div className="text-sm space-y-2">
+              <p>1. 「新しい問題」で問題作成</p>
+              <p>2. 「問題を聞く」で音列再生</p>
+              <p>3. 鍵盤で順番に音を入力</p>
+              <p>4. 全音入力で自動採点</p>
+              <p>5. ハンバーガーメニュー（三）で設定変更</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col p-3 gap-3">
+        {/* Score and Controls */}
+        <div className="flex items-center justify-center gap-4">
+          {/* Simple Score */}
+          <div className="bg-white rounded-lg shadow-sm px-4 py-2">
+            <div className="text-lg font-bold text-gray-800">
+              {score.correct} / {score.total}
+            </div>
+          </div>
+
+          {/* Control Buttons */}
+          <div className="flex gap-2">
+            <button
+              onClick={generateQuiz}
+              disabled={isPlayingQuiz}
+              className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:bg-gray-400 font-medium"
+            >
+              新しい問題
+            </button>
+            
+            <button
+              onClick={playQuizSequence}
+              disabled={!currentQuiz || isPlayingQuiz}
+              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400 flex items-center gap-1"
+            >
+              ▶ {isPlayingQuiz ? '再生中' : '問題を聞く'}
+            </button>
+            
+            {currentQuiz && (
+              <>
                 <button
                   onClick={resetAnswer}
                   disabled={isPlayingQuiz}
-                  className="px-4 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 disabled:bg-gray-400 transition-colors font-medium"
+                  className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 disabled:bg-gray-400"
                 >
-                  答えをリセット
+                  リセット
                 </button>
-              )}
-            </div>
-
-            {/* Quiz Status */}
-            {currentQuiz && (
-              <div className="text-center">
-                <div className="mb-4">
-                  <span className="text-lg font-medium text-gray-700">
-                    問題: {currentQuiz.length}音の音列
-                  </span>
-                </div>
                 
-                <div className="mb-4">
-                  <span className="text-md text-gray-600">
-                    あなたの答え ({userAnswer.length}/{currentQuiz.length}): 
-                  </span>
-                  <span className="ml-2 font-mono text-lg">
-                    {userAnswer.length > 0 ? userAnswer.join(' → ') : '(まだ入力されていません)'}
-                  </span>
-                </div>
-
-                {/* Result Display */}
-                {quizResult && (
-                  <div className={`text-2xl font-bold mb-4 ${
-                    quizResult === 'correct' ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {quizResult === 'correct' ? '🎉 正解！' : '❌ 不正解'}
-                  </div>
-                )}
-
-                {/* Show Answer Button */}
-                {currentQuiz && (
-                  <button
-                    onClick={toggleShowAnswer}
-                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm"
-                  >
-                    {showAnswer ? '答えを隠す' : '答えを見る'}
-                  </button>
-                )}
-
-                {/* Answer Display */}
-                {showAnswer && (
-                  <div className="mt-4 p-4 bg-gray-100 rounded-lg">
-                    <span className="text-md font-medium text-gray-700">
-                      正解: 
-                    </span>
-                    <span className="ml-2 font-mono text-lg text-gray-800">
-                      {currentQuiz.join(' → ')}
-                    </span>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {!currentQuiz && (
-              <div className="text-center text-gray-600">
-                「新しい問題」ボタンを押してクイズを開始してください
-              </div>
+                <button
+                  onClick={toggleShowAnswer}
+                  className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+                >
+                  {showAnswer ? '答えを隠す' : '答えを見る'}
+                </button>
+              </>
             )}
           </div>
         </div>
 
-        {/* Piano Keyboard */}
-        <div className="flex justify-center px-8 mb-8">
-          <div className="relative bg-gray-200 p-4 rounded-2xl shadow-lg" style={{width: '736px'}}>
-            <div className="text-center mb-4 text-gray-700 font-medium">
-              キーボードまたはクリックで音を入力
+        {/* Status Display */}
+        {currentQuiz && (
+          <div className="text-center">
+            {/* User Answer */}
+            <div className="font-mono text-lg bg-white rounded p-2 shadow-sm mb-2">
+              {userAnswer.length > 0 ? userAnswer.join(' → ') : '(鍵盤で音を入力してください)'}
             </div>
-            <div className="relative">
+            
+            {/* Result */}
+            {quizResult && (
+              <div className={`text-xl font-bold mb-2 ${
+                quizResult === 'correct' ? 'text-green-600' : 'text-red-600'
+              }`}>
+                {quizResult === 'correct' ? '🎉 正解！' : '❌ 不正解'}
+              </div>
+            )}
+
+            {/* Answer Display */}
+            {showAnswer && (
+              <div className="text-sm bg-yellow-50 border border-yellow-200 rounded p-2">
+                <strong>正解:</strong> {currentQuiz.join(' → ')}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Piano Keyboard */}
+        <div className="flex-1 flex justify-center items-end">
+          <div className="relative bg-gray-200 p-2 rounded-xl shadow-lg overflow-x-auto">
+            <div className="relative flex justify-center" style={{ 
+              minWidth: '500px', 
+              maxWidth: '90vw',
+              // Responsive min-width for PC
+              ...(window.innerWidth >= 1280 && { minWidth: '800px' }),
+              ...(window.innerWidth >= 1024 && window.innerWidth < 1280 && { minWidth: '700px' }),
+              ...(window.innerWidth >= 768 && window.innerWidth < 1024 && { minWidth: '600px' })
+            }}>
               {/* White keys */}
               <div className="flex">
-                {pianoKeys.filter(key => key.type === 'white').map((key) => {
+                {pianoKeys.filter(key => key.type === 'white').map((key, index) => {
                   const isActive = Array.from(activeKeys).some(activeKey => activeKey.startsWith(key.note));
                   const isInAnswer = userAnswer.includes(key.note);
                   const isDisabled = isKeyDisabled(key.note);
-                  const animationKey = keyAnimations.get(key.note) || 0;
                   
                   let keyColor = 'bg-white';
                   if (isDisabled) {
@@ -511,29 +531,28 @@ const PianoQuizGame = () => {
                   return (
                     <button
                       key={key.note}
+                      onTouchStart={(e) => {
+                        e.preventDefault();
+                        if (!isDisabled) handleNoteInput(key.note);
+                      }}
                       onMouseDown={() => !isDisabled && handleNoteInput(key.note)}
                       disabled={isDisabled || isPlayingQuiz}
                       className={`
-                        w-16 h-64 border border-gray-300 rounded-b-xl
-                        transition-all duration-300 flex flex-col justify-end items-center pb-4
+                        w-12 h-36 md:w-16 md:h-48 lg:w-20 lg:h-56 xl:w-24 xl:h-64 border border-gray-300 rounded-b-xl
+                        transition-all duration-300 flex flex-col justify-end items-center pb-2 md:pb-3 lg:pb-4
                         ${keyColor}
                         ${isActive ? 'animate-pulse' : ''}
                         ${isDisabled ? 'cursor-not-allowed opacity-50' : 'hover:bg-gray-50 active:bg-gray-100 cursor-pointer'}
+                        touch-manipulation
                       `}
-                      style={{
-                        animationDuration: '0.6s',
-                        animationIterationCount: '1',
-                      }}
                     >
-                      <span className={`text-sm font-bold mb-1 ${isDisabled ? 'text-gray-300' : 'text-gray-800'}`}>
+                      <span className={`text-xs md:text-sm lg:text-base font-bold mb-1 ${isDisabled ? 'text-gray-300' : 'text-gray-800'}`}>
                         {key.key?.toUpperCase()}
                       </span>
-                      <span className={`text-xs opacity-80 ${isDisabled ? 'text-gray-300' : 'text-gray-600'}`}>
-                        {key.note}
-                      </span>
-                      <span className={`text-xs opacity-80 ${isDisabled ? 'text-gray-300' : 'text-gray-600'}`}>
+                      <span className={`text-xs md:text-sm ${isDisabled ? 'text-gray-300' : 'text-gray-600'}`}>
                         {key.solfege}
-                      </span>                    </button>
+                      </span>
+                    </button>
                   );
                 })}
               </div>
@@ -544,12 +563,21 @@ const PianoQuizGame = () => {
                   const whiteKeyIndex = pianoKeys.filter(k => k.type === 'white' && 
                     pianoKeys.indexOf(k) < pianoKeys.indexOf(key)).length;
                   
-                  let leftOffset = (whiteKeyIndex * 64) - 24;
+                  // Responsive positioning for black keys
+                  let leftOffset;
+                  if (window.innerWidth >= 1280) { // xl
+                    leftOffset = (whiteKeyIndex * 96) - 30;
+                  } else if (window.innerWidth >= 1024) { // lg
+                    leftOffset = (whiteKeyIndex * 80) - 25;
+                  } else if (window.innerWidth >= 768) { // md
+                    leftOffset = (whiteKeyIndex * 64) - 20;
+                  } else { // mobile
+                    leftOffset = (whiteKeyIndex * 48) - 18;
+                  }
                   
                   const isActive = Array.from(activeKeys).some(activeKey => activeKey.startsWith(key.note));
                   const isInAnswer = userAnswer.includes(key.note);
                   const isDisabled = isKeyDisabled(key.note);
-                  const animationKey = keyAnimations.get(key.note) || 0;
                   
                   let keyColor = 'bg-black';
                   if (isDisabled) {
@@ -563,46 +591,32 @@ const PianoQuizGame = () => {
                   return (
                     <button
                       key={key.note}
+                      onTouchStart={(e) => {
+                        e.preventDefault();
+                        if (!isDisabled) handleNoteInput(key.note);
+                      }}
                       onMouseDown={() => !isDisabled && handleNoteInput(key.note)}
                       disabled={isDisabled || isPlayingQuiz}
                       style={{ left: `${leftOffset + 4}px` }}
                       className={`
-                        absolute w-12 h-40 border border-gray-800 rounded-b-lg shadow-2xl text-white
-                        transition-all duration-300 flex flex-col justify-end items-center pb-4 z-10
+                        absolute w-8 h-24 md:w-12 md:h-32 lg:w-14 lg:h-40 xl:w-16 xl:h-44 border border-gray-800 rounded-b-lg shadow-2xl text-white
+                        transition-all duration-300 flex flex-col justify-end items-center pb-2 md:pb-3 z-10
                         ${keyColor}
                         ${isActive ? 'animate-pulse' : ''}
                         ${isDisabled ? 'cursor-not-allowed opacity-50' : 'hover:bg-gray-800 active:bg-gray-700 cursor-pointer'}
+                        touch-manipulation
                       `}
                     >
-                      <span className={`text-xs font-bold bg-black bg-opacity-50 px-1 py-0.5 rounded mb-1 ${isDisabled ? 'text-gray-300' : 'text-white'}`}>
+                      <span className={`text-xs md:text-sm font-bold bg-black bg-opacity-50 px-1 rounded mb-1 ${isDisabled ? 'text-gray-300' : 'text-white'}`}>
                         {key.key?.toUpperCase()}
                       </span>
-                      <span className={`text-xs opacity-75 ${isDisabled ? 'text-gray-300' : ''}`}>
-                        {key.note}
-                      </span>
-                      <span className={`text-xs opacity-75 ${isDisabled ? 'text-gray-300' : ''}`}>
+                      <span className={`text-xs md:text-sm ${isDisabled ? 'text-gray-300' : ''}`}>
                         {key.solfege}
-                      </span>                    </button>
+                      </span>
+                    </button>
                   );
-                })}l
+                })}
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Instructions */}
-        <div className="flex justify-center px-8">
-          <div className="bg-white rounded-lg shadow-md p-6" style={{width: '736px'}}>
-            <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">遊び方</h3>
-            <div className="text-gray-700 space-y-2">
-              <p>1. 設定で難易度を調整できます（音数・音の範囲）</p>
-              <p>2. グレーのキーは現在の設定では使用されません</p>
-              <p>3. 「新しい問題」ボタンで問題が出題されます</p>
-              <p>4. 「問題を聞く」ボタンで音列を再生します（何度でも可能）</p>
-              <p>5. 有効なピアノキーをクリック/キーボードで順番に音を入力</p>
-              <p>6. 全ての音を入力すると自動で採点されます</p>
-              <p>7. 正解すると🎉、不正解だと❌が表示されます</p>
-              <p>8. 何度でもチャレンジできます！</p>
             </div>
           </div>
         </div>
