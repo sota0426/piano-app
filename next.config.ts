@@ -1,11 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'export',
-  basePath: '/piano-app',
-  assetPrefix: '/piano-app/',
+  trailingSlash: true,
   images: {
-    unoptimized: true,
-  },  
-};
+    unoptimized: true
+  },
+  basePath: '/piano-app', // リポジトリ名に合わせる
+  assetPrefix: '/piano-app/'
+}
 
-module.exports = nextConfig;
+module.exports = nextConfig
