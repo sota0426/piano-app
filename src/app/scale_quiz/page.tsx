@@ -15,6 +15,8 @@ const PianoQuizGame = () => {
   const [showMenu, setShowMenu] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
 
+  const [lastInputTime, setLastInputTime] = useState(0);
+
   const router = useRouter();
   
   // Settings
@@ -211,8 +213,12 @@ const PianoQuizGame = () => {
     setIsPlayingQuiz(false);
   };
 
-  // Handle user input
+  // Handle user input with debounce to prevent double input
   const handleNoteInput = (note: string) => {
+    const now = Date.now();
+    if (now - lastInputTime < 100) return; // 100ms debounce
+    setLastInputTime(now);
+
     if (!currentQuiz || quizResult === 'correct' || isPlayingQuiz) return;
     
     const availableNotes = getAvailableNotes();
@@ -236,18 +242,25 @@ const PianoQuizGame = () => {
     }
   };
 
+  // Handle touch/mouse events properly to prevent double firing
+  const handleKeyPress = (note: string, event: React.TouchEvent | React.MouseEvent) => {
+    event.preventDefault();
+    handleNoteInput(note);
+  };
+
   // Keyboard event handlers
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const note = keyMappings[e.key.toLowerCase() as keyof typeof keyMappings];
       if (note) {
+        e.preventDefault();
         handleNoteInput(note);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [userAnswer, currentQuiz, quizResult, isPlayingQuiz, settings]);
+  }, [userAnswer, currentQuiz, quizResult, isPlayingQuiz, settings, lastInputTime]);
 
   // Reset user answer
   const resetAnswer = () => {
@@ -504,14 +517,7 @@ const PianoQuizGame = () => {
         {/* Piano Keyboard */}
         <div className="flex-1 flex justify-center items-end">
           <div className="relative bg-gray-200 p-2 rounded-xl shadow-lg overflow-x-auto">
-            <div className="relative flex justify-center" style={{ 
-              minWidth: '500px', 
-              maxWidth: '90vw',
-              // Responsive min-width for PC
-              ...(window.innerWidth >= 1280 && { minWidth: '800px' }),
-              ...(window.innerWidth >= 1024 && window.innerWidth < 1280 && { minWidth: '700px' }),
-              ...(window.innerWidth >= 768 && window.innerWidth < 1024 && { minWidth: '600px' })
-            }}>
+            <div className="relative flex justify-center min-w-[500px] max-w-[90vw] md:min-w-[600px] lg:min-w-[700px] xl:min-w-[800px]">
               {/* White keys */}
               <div className="flex">
                 {pianoKeys.filter(key => key.type === 'white').map((key, index) => {
@@ -532,10 +538,11 @@ const PianoQuizGame = () => {
                     <button
                       key={key.note}
                       onTouchStart={(e) => {
-                        e.preventDefault();
-                        if (!isDisabled) handleNoteInput(key.note);
+                        if (!isDisabled) handleKeyPress(key.note, e);
                       }}
-                      onMouseDown={() => !isDisabled && handleNoteInput(key.note)}
+                      onMouseDown={(e) => {
+                        if (!isDisabled) handleKeyPress(key.note, e);
+                      }}
                       disabled={isDisabled || isPlayingQuiz}
                       className={`
                         w-12 h-36 md:w-16 md:h-48 lg:w-20 lg:h-56 xl:w-24 xl:h-64 border border-gray-300 rounded-b-xl
@@ -563,17 +570,8 @@ const PianoQuizGame = () => {
                   const whiteKeyIndex = pianoKeys.filter(k => k.type === 'white' && 
                     pianoKeys.indexOf(k) < pianoKeys.indexOf(key)).length;
                   
-                  // Responsive positioning for black keys
-                  let leftOffset;
-                  if (window.innerWidth >= 1280) { // xl
-                    leftOffset = (whiteKeyIndex * 96) - 30;
-                  } else if (window.innerWidth >= 1024) { // lg
-                    leftOffset = (whiteKeyIndex * 80) - 25;
-                  } else if (window.innerWidth >= 768) { // md
-                    leftOffset = (whiteKeyIndex * 64) - 20;
-                  } else { // mobile
-                    leftOffset = (whiteKeyIndex * 48) - 18;
-                  }
+                  // Calculate left offset for mobile (will be overridden by CSS for larger screens)
+                  const leftOffset = (whiteKeyIndex * 48) - 18;
                   
                   const isActive = Array.from(activeKeys).some(activeKey => activeKey.startsWith(key.note));
                   const isInAnswer = userAnswer.includes(key.note);
@@ -592,10 +590,11 @@ const PianoQuizGame = () => {
                     <button
                       key={key.note}
                       onTouchStart={(e) => {
-                        e.preventDefault();
-                        if (!isDisabled) handleNoteInput(key.note);
+                        if (!isDisabled) handleKeyPress(key.note, e);
                       }}
-                      onMouseDown={() => !isDisabled && handleNoteInput(key.note)}
+                      onMouseDown={(e) => {
+                        if (!isDisabled) handleKeyPress(key.note, e);
+                      }}
                       disabled={isDisabled || isPlayingQuiz}
                       style={{ left: `${leftOffset + 4}px` }}
                       className={`
