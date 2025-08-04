@@ -1,7 +1,11 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  /* config options here */
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  output: 'export',
+  basePath: '/piano-app',
+  assetPrefix: '/piano-app/',
+  images: {
+    unoptimized: true,
+  },  
 };
 
-export default nextConfig;
+module.exports = nextConfig;
