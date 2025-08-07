@@ -1,19 +1,45 @@
+//src\components\PianoAudio.tsx
+
 import { useRef, useEffect, useCallback } from 'react';
 
 const useRealisticPianoAudio = () => {
   const audioContextRef = useRef<AudioContext | null>(null);
 
-  // 音の周波数定義
+  // 音の周波数定義（左手用に低音域を追加）
   const noteFrequencies: { [note: string]: number } = {
+    // 左手用低音域
+    'C2': 65.41, 'C#2': 69.30, 'D2': 73.42, 'D#2': 77.78, 'E2': 82.41,
+    'F2': 87.31, 'F#2': 92.50, 'G2': 98.00, 'G#2': 103.83, 'A2': 110.00,
+    'A#2': 116.54, 'B2': 123.47,
+    
+    'C3': 130.81, 'C#3': 138.59, 'D3': 146.83, 'D#3': 155.56, 'E3': 164.81,
+    'F3': 174.61, 'F#3': 185.00, 'G3': 196.00, 'G#3': 207.65, 'A3': 220.00,
+    'A#3': 233.08, 'B3': 246.94,
+
+    // 既存の右手用音域
     'C4': 261.63, 'C#4': 277.18, 'D4': 293.66, 'D#4': 311.13, 'E4': 329.63,
     'F4': 349.23, 'F#4': 369.99, 'G4': 392.00, 'G#4': 415.30, 'A4': 440.00,
-    'A#4': 466.16, 'B4': 493.88, 'C5': 523.25, 'C#5': 554.37, 'D5': 587.33,
-    'D#5': 622.25, 'E5': 659.25, 'F5': 698.46, 'F#5': 739.99, 'G5': 783.99
+    'A#4': 466.16, 'B4': 493.88, 
+    
+    'C5': 523.25, 'C#5': 554.37, 'D5': 587.33,
+    'D#5': 622.25, 'E5': 659.25, 'F5': 698.46, 'F#5': 739.99, 'G5': 783.99,
+    'G#5': 830.61, 'A5': 880.00, 'A#5': 932.33, 'B5': 987.77,
+    
+    'C6': 1046.50, 'C#6': 1108.73, 'D6': 1174.66, 'D#6': 1244.51, 'E6': 1318.51, 'F6': 1396.91
   };
 
-  // ピアノの音域による音色の違いを定義
+  // ピアノの音域による音色の違いを定義（低音域対応）
   const getPianoCharacteristics = (frequency: number) => {
-    if (frequency < 300) {
+    if (frequency < 150) {
+      // 超低音域：非常に重い、長い残響
+      return {
+        brightness: 0.4,
+        sustain: 2.5,
+        harmonicStrength: 0.9,
+        noiseLevel: 0.2,
+        filterCutoff: frequency * 4
+      };
+    } else if (frequency < 300) {
       // 低音域：より重い、残響の多い音
       return {
         brightness: 0.6,
@@ -97,18 +123,7 @@ const useRealisticPianoAudio = () => {
     return impulse;
   };
 
-  // 弦の共鳴をシミュレート
-  const createStringResonance = (context: AudioContext, frequency: number, duration: number) => {
-    const resonator = context.createIIRFilter([0.00006, 0.0, -0.00006], [1.0, -1.82269, 0.83478]);
-    
-    // 弦の共振周波数に調整
-    const q = 30; // Q値を高くして共振を強調
-    const resonantFreq = frequency * 2; // 倍音で共振
-    
-    return resonator;
-  };
-
-  // ピアノらしい音の再生（大幅改良版）
+  // ピアノらしい音の再生（低音域対応改良版）
   const playRealisticPianoTone = useCallback((frequency: number, duration = 1.2, velocity = 0.8) => {
     if (!audioContextRef.current) return;
     
@@ -119,15 +134,22 @@ const useRealisticPianoAudio = () => {
     // メインの音響チェーンを作成
     const masterGain = context.createGain();
     
-    // リバーブ作成
+    // リバーブ作成（低音域用に調整）
+    const reverbDuration = frequency < 200 ? 3.0 : 2.0;
     const convolver = context.createConvolver();
-    convolver.buffer = createReverbImpulse(context, 2.0, 3.0);
+    convolver.buffer = createReverbImpulse(context, reverbDuration, 3.0);
     
     const dryGain = context.createGain();
     const wetGain = context.createGain();
     
-    dryGain.gain.value = 0.7;
-    wetGain.gain.value = 0.3;
+    // 低音域はリバーブを強めに
+    if (frequency < 200) {
+      dryGain.gain.value = 0.6;
+      wetGain.gain.value = 0.4;
+    } else {
+      dryGain.gain.value = 0.7;
+      wetGain.gain.value = 0.3;
+    }
     
     masterGain.connect(dryGain);
     masterGain.connect(convolver);
@@ -136,14 +158,14 @@ const useRealisticPianoAudio = () => {
     dryGain.connect(context.destination);
     wetGain.connect(context.destination);
 
-    // 1. ハンマーアタック音（より詳細）
+    // 1. ハンマーアタック音（低音域対応）
     const createHammerNoise = () => {
-      const noiseBuffer = context.createBuffer(1, context.sampleRate * 0.05, context.sampleRate);
+      const noiseBuffer = context.createBuffer(1, context.sampleRate * 0.08, context.sampleRate);
       const noiseData = noiseBuffer.getChannelData(0);
       
       for (let i = 0; i < noiseData.length; i++) {
         const t = i / context.sampleRate;
-        const envelope = Math.exp(-t * 50); // 急激な減衰
+        const envelope = Math.exp(-t * (frequency < 200 ? 30 : 50)); // 低音域は緩やかな減衰
         noiseData[i] = (Math.random() * 2 - 1) * envelope * characteristics.noiseLevel * velocity;
       }
       
@@ -153,7 +175,7 @@ const useRealisticPianoAudio = () => {
       
       noiseSource.buffer = noiseBuffer;
       noiseFilter.type = 'bandpass';
-      noiseFilter.frequency.value = frequency * 8;
+      noiseFilter.frequency.value = frequency * (frequency < 200 ? 6 : 8);
       noiseFilter.Q.value = 2;
       
       noiseSource.connect(noiseFilter);
@@ -161,24 +183,24 @@ const useRealisticPianoAudio = () => {
       noiseGain.connect(masterGain);
       
       noiseGain.gain.setValueAtTime(velocity * 0.5, context.currentTime);
-      noiseGain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.05);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.08);
       
       noiseSource.start(context.currentTime);
-      noiseSource.stop(context.currentTime + 0.05);
+      noiseSource.stop(context.currentTime + 0.08);
     };
 
     createHammerNoise();
 
-    // 2. 弦の倍音構造（ピアノの実際の倍音比率に基づく）
+    // 2. 弦の倍音構造（低音域対応）
     const harmonics = [
       { freq: frequency, gain: 1.0, detune: 0, type: 'sawtooth' as OscillatorType },
-      { freq: frequency * 2, gain: 0.5, detune: -2, type: 'sawtooth' as OscillatorType },
-      { freq: frequency * 3, gain: 0.25, detune: 1, type: 'triangle' as OscillatorType },
-      { freq: frequency * 4, gain: 0.15, detune: -1, type: 'triangle' as OscillatorType },
-      { freq: frequency * 5, gain: 0.1, detune: 2, type: 'sine' as OscillatorType },
-      { freq: frequency * 6, gain: 0.08, detune: -1.5, type: 'sine' as OscillatorType },
-      { freq: frequency * 7, gain: 0.06, detune: 1.2, type: 'sine' as OscillatorType },
-      { freq: frequency * 8, gain: 0.04, detune: -0.8, type: 'sine' as OscillatorType },
+      { freq: frequency * 2, gain: frequency < 200 ? 0.7 : 0.5, detune: -2, type: 'sawtooth' as OscillatorType },
+      { freq: frequency * 3, gain: frequency < 200 ? 0.4 : 0.25, detune: 1, type: 'triangle' as OscillatorType },
+      { freq: frequency * 4, gain: frequency < 200 ? 0.25 : 0.15, detune: -1, type: 'triangle' as OscillatorType },
+      { freq: frequency * 5, gain: frequency < 200 ? 0.15 : 0.1, detune: 2, type: 'sine' as OscillatorType },
+      { freq: frequency * 6, gain: frequency < 200 ? 0.12 : 0.08, detune: -1.5, type: 'sine' as OscillatorType },
+      { freq: frequency * 7, gain: frequency < 200 ? 0.1 : 0.06, detune: 1.2, type: 'sine' as OscillatorType },
+      { freq: frequency * 8, gain: frequency < 200 ? 0.08 : 0.04, detune: -0.8, type: 'sine' as OscillatorType },
       // 非整数倍音（弦の非線形性をシミュレート）
       { freq: frequency * 2.1, gain: 0.02, detune: 0, type: 'sine' as OscillatorType },
       { freq: frequency * 3.05, gain: 0.015, detune: 0, type: 'sine' as OscillatorType }
@@ -217,7 +239,7 @@ const useRealisticPianoAudio = () => {
       oscillator.stop(context.currentTime + decayTime + 0.1);
     });
 
-    // 3. 弦の共鳴効果
+    // 3. 弦の共鳴効果（低音域強化）
     const createStringResonance = () => {
       const resonanceOsc = context.createOscillator();
       const resonanceGain = context.createGain();
@@ -228,14 +250,15 @@ const useRealisticPianoAudio = () => {
       
       resonanceFilter.type = 'bandpass';
       resonanceFilter.frequency.value = frequency * 0.5;
-      resonanceFilter.Q.value = 20; // 高いQ値で共鳴効果
+      resonanceFilter.Q.value = frequency < 200 ? 30 : 20; // 低音域はより強い共鳴
       
       resonanceOsc.connect(resonanceFilter);
       resonanceFilter.connect(resonanceGain);
       resonanceGain.connect(masterGain);
       
+      const resonanceStrength = frequency < 200 ? 0.15 : 0.1;
       resonanceGain.gain.setValueAtTime(0, context.currentTime);
-      resonanceGain.gain.linearRampToValueAtTime(0.1 * velocity, context.currentTime + 0.1);
+      resonanceGain.gain.linearRampToValueAtTime(resonanceStrength * velocity, context.currentTime + 0.1);
       resonanceGain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + effectiveDuration * 1.5);
       
       resonanceOsc.start(context.currentTime + 0.05);

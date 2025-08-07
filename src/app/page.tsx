@@ -11,12 +11,17 @@ export default function Home() {
       disabled: false,      
     },
     {
+      title: "楽譜音符当てゲーム",
+      description: "楽譜を読み取るクイズ",
+      path: "/sheet_quiz",
+      disabled: false,      
+    },
+    {
       title: "リズム当てゲーム",
       description: "リズムパターンを当てるクイズ",
       path: "/rhythm_quiz",
       disabled: true,      
-    },
-  ]
+    },  ]
 
 
   return (

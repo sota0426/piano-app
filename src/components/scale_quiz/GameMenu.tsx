@@ -1,4 +1,4 @@
-// src\components\scale_quiz\GameMenu.tsx
+// src/components/scale_quiz/GameMenu.tsx
 import React from 'react';
 
 interface Score {
@@ -18,12 +18,9 @@ interface GameMenuProps {
   score: Score;
   settings: GameSettings;
   onSettingsChange: (settings: GameSettings) => void;
-  onGoHome?: () => void;
-  settingsConfig?: {
-    noteRangeOptions: { value: string; label: string }[];
-    minNotesOptions: number[];
-    maxNotesOptions: number[];
-  };
+  onGoHome: () => void;
+  activeHand: 'left' | 'right';
+  setActiveHand: (hand: 'left' | 'right') => void;
 }
 
 const defaultSettingsConfig = {
@@ -38,7 +35,6 @@ const defaultSettingsConfig = {
   maxNotesOptions: [1, 2, 3, 4, 5]
 };
 
-
 const GameMenu: React.FC<GameMenuProps> = ({
   isOpen,
   onClose,
@@ -46,7 +42,8 @@ const GameMenu: React.FC<GameMenuProps> = ({
   settings,
   onSettingsChange,
   onGoHome,
-  settingsConfig = defaultSettingsConfig
+  activeHand,
+  setActiveHand
 }) => {
   if (!isOpen) return null;
 
@@ -68,13 +65,13 @@ const GameMenu: React.FC<GameMenuProps> = ({
 
   return (
     <div className="absolute inset-0 bg-black/50 flex items-start justify-start z-50">
-      <div className="bg-white rounded-r-lg p-6 h-full min-w-80 shadow-xl">
+      <div className="bg-white rounded-r-lg p-6 h-full min-w-80 shadow-xl overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-lg font-bold">メニュー</h3>
         </div>
-        
+
         <div className="space-y-6">
-          {/* Score */}
+          {/* スコア */}
           <div>
             <h4 className="font-medium text-gray-800 mb-2">スコア</h4>
             <div className="bg-gray-50 p-3 rounded">
@@ -87,10 +84,37 @@ const GameMenu: React.FC<GameMenuProps> = ({
             </div>
           </div>
 
-          {/* Settings */}
+          {/* 手の切り替え */}
+          <div>
+            <h4 className="font-medium text-gray-800 mb-2">手の切り替え</h4>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setActiveHand('left')}
+                className={`px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  activeHand === 'left'
+                    ? 'bg-blue-500 text-white shadow-lg'
+                    : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+                }`}
+              >
+                🤚 左手
+              </button>
+              <button
+                onClick={() => setActiveHand('right')}
+                className={`px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  activeHand === 'right'
+                    ? 'bg-blue-500 text-white shadow-lg'
+                    : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+                }`}
+              >
+                ✋ 右手
+              </button>
+            </div>
+          </div>
+
+          {/* 設定 */}
           <div>
             <h4 className="font-medium text-gray-800 mb-3">設定</h4>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm text-gray-600 mb-2">音数設定</label>
@@ -102,8 +126,10 @@ const GameMenu: React.FC<GameMenuProps> = ({
                       onChange={(e) => handleMinNotesChange(parseInt(e.target.value))}
                       className="ml-1 px-2 py-1 border rounded text-sm"
                     >
-                      {settingsConfig.minNotesOptions.map(option => (
-                        <option key={option} value={option}>{option}音</option>
+                      {defaultSettingsConfig.minNotesOptions.map((option) => (
+                        <option key={option} value={option}>
+                          {option}音
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -114,8 +140,10 @@ const GameMenu: React.FC<GameMenuProps> = ({
                       onChange={(e) => handleMaxNotesChange(parseInt(e.target.value))}
                       className="ml-1 px-2 py-1 border rounded text-sm"
                     >
-                      {settingsConfig.maxNotesOptions.map(option => (
-                        <option key={option} value={option}>{option}音</option>
+                      {defaultSettingsConfig.maxNotesOptions.map((option) => (
+                        <option key={option} value={option}>
+                          {option}音
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -126,10 +154,12 @@ const GameMenu: React.FC<GameMenuProps> = ({
                 <label className="block text-sm text-gray-600 mb-2">音の範囲</label>
                 <select
                   value={settings.noteRange}
-                  onChange={(e) => onSettingsChange({ ...settings, noteRange: e.target.value })}
+                  onChange={(e) =>
+                    onSettingsChange({ ...settings, noteRange: e.target.value })
+                  }
                   className="w-full px-3 py-2 border rounded text-sm"
                 >
-                  {settingsConfig.noteRangeOptions.map(option => (
+                  {defaultSettingsConfig.noteRangeOptions.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
@@ -139,17 +169,21 @@ const GameMenu: React.FC<GameMenuProps> = ({
             </div>
           </div>
 
-          {/* Navigation */}
-          {onGoHome && (
-            <div className="border-t pt-4">
-              <button
-                onClick={onClose}
-                className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
-              >
-                ← ゲームに戻る
-              </button>
-            </div>
-          )}
+          {/* 戻るボタン */}
+          <div className="border-t pt-4">
+            <button
+              onClick={onClose}
+              className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+            >
+              ← ゲームに戻る
+            </button>
+            <button
+              onClick={onGoHome}
+              className="mt-2 w-full px-4 py-2 bg-red-100 text-red-600 rounded hover:bg-red-200"
+            >
+              ホームに戻る
+            </button>
+          </div>
         </div>
       </div>
     </div>
