@@ -69,7 +69,7 @@ const SheetMusic: React.FC<SheetMusicProps> = ({ note, hand }) => {
   }, [note, hand]);
 
   return (
-    <div className="flex flex-col items-center w-full">
+    <div className="flex flex-col items-center w-full justify-center">
       <div className="flex justify-center items-center w-full" ref={containerRef} />
       <div className="text-base text-gray-700 mt-2 text-center">
         {!hand && (parseInt(note.slice(-1)) <= 3 ? '🤚 低音域' : '✋ 高音域')}

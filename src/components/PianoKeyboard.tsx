@@ -232,7 +232,7 @@ useEffect(() => {
                     <span className={`text-xs ${isDisabled ? 'text-gray-300' : 'text-gray-700'}`}>
                       {key.note}
                     </span>
-                    <span className="text-[6px] bg-white bg-opacity-70 px-1 rounded mb-1 text-gray-500 border">
+                    <span className="text-xs bg-white bg-opacity-70 px-1 rounded mb-1 text-gray-500 border">
                       {key.key?.toUpperCase()}
                     </span>                  
                   </button>
@@ -276,10 +276,10 @@ useEffect(() => {
                       touch-manipulation
                     `}
                   >
-                    <span className={`text-xs ${isDisabled ? 'text-gray-400' : key.type === 'black' ? 'text-white' : 'text-gray-600'}`}>
+                    <span className={`text-xs pb-1 ${isDisabled ? 'text-gray-400' : key.type === 'black' ? 'text-white' : 'text-gray-600'}`}>
                       {key.solfege}
                     </span>
-                    <span className="text-[6px] bg-black bg-opacity-50 px-1 rounded mb-1 border text-gray-200">
+                    <span className="text-xs  bg-black bg-opacity-50 px-1 rounded mb-1 border text-gray-200">
                       {key.key?.toUpperCase()}
                     </span>
                   </button>

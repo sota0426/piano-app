@@ -30,6 +30,9 @@ const Quiz: React.FC = () => {
   
   // 今操作している手
   const [activeHand, setActiveHand] = useState<Hand>('right');
+  
+  // 音声の初期化状態
+  const [audioInitialized, setAudioInitialized] = useState(false);
 
   const { playNote } = useRealisticPianoAudio();
   const router = useRouter();
@@ -60,18 +63,29 @@ const Quiz: React.FC = () => {
       setLeftUserAnswer([]);
       setLeftIsCorrect(null);
       setLeftDisabledKeys([]);
-      playNote(randomNote, 1.2, 0.9);
+      // 音声が初期化されている場合のみ再生
+      if (audioInitialized) {
+        playNote(randomNote, 1.2, 0.9);
+      }
     } else {
       setRightQuizNote(randomNote);
       setRightUserAnswer([]);
       setRightIsCorrect(null);
       setRightDisabledKeys([]);
-      playNote(randomNote, 1.2, 0.9);
+      // 音声が初期化されている場合のみ再生
+      if (audioInitialized) {
+        playNote(randomNote, 1.2, 0.9);
+      }
     }
   };
 
   // 左手の入力処理
   const handleLeftKeyPress = (note: string) => {
+    // 音声を初期化（初回操作時）
+    if (!audioInitialized) {
+      setAudioInitialized(true);
+    }
+
     if (leftIsCorrect === false) {
       setLeftUserAnswer([]);
       setLeftDisabledKeys([]);
@@ -91,6 +105,11 @@ const Quiz: React.FC = () => {
 
   // 右手の入力処理
   const handleRightKeyPress = (note: string) => {
+    // 音声を初期化（初回操作時）
+    if (!audioInitialized) {
+      setAudioInitialized(true);
+    }
+
     if (rightIsCorrect === false) {
       setRightUserAnswer([]);
       setRightDisabledKeys([]);
@@ -140,83 +159,129 @@ const Quiz: React.FC = () => {
   }, [mode]);
 
   return (
-  <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-50 to-blue-100 p-4">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-50 to-blue-100 p-4">
 
-    {/* ヘッダーエリア */}
-    <div className="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-      <h2 className="text-3xl font-bold text-gray-800 text-center sm:text-left">🎼 音あてクイズ</h2>
+      {/* ヘッダーエリア */}
+      <div className="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <h2 className="text-3xl font-bold text-gray-800 text-center sm:text-left">🎼 音あてクイズ</h2>
 
-      <div className="flex gap-3 justify-center sm:justify-end">
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="px-4 py-2 rounded-lg font-semibold text-white bg-indigo-600 hover:bg-indigo-700 shadow"
-        >
-          ⚙️ 設定
-        </button>
-        <button
-          onClick={() => generateNewNote(activeHand)}
-          className="px-4 py-2 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow"
-        >
-          🎵 次の問題
-        </button>
-      </div>
-    </div>
-
-<div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6 w-full">
-
-  {/* 楽譜エリア */}
-  <div className="w-full sm:basis-2/3 bg-white rounded-xl shadow-lg p-4">
-    <SheetMusic 
-      note={activeHand === 'left' ? leftQuizNote : rightQuizNote} 
-      hand={activeHand}
-    />
-  </div>
-
-  {/* キーボードエリア */}
-  <div className="w-full sm:basis-1/12">
-    <KeyboardInput
-      onNoteInput={activeHand === 'left' ? handleLeftKeyPress : handleRightKeyPress}
-      enabled={true}
-      hand={activeHand}
-    />
-
-    <ExtendedPianoKeyboard
-      activeKeys={new Set(activeHand === 'left' ? leftUserAnswer : rightUserAnswer)}
-      userAnswer={activeHand === 'left' ? leftUserAnswer : rightUserAnswer}
-      disabledKeys={activeHand === 'left' ? leftDisabledKeys : rightDisabledKeys}
-      isPlayingQuiz={false}
-      onKeyPress={activeHand === 'left' ? handleLeftKeyPress : handleRightKeyPress}
-      activeHand={activeHand}
-    />
-  </div>
-</div>
-
-
-    {/* 問題表示・判定エリア */}
-      {(activeHand === 'left' ? leftIsCorrect : rightIsCorrect) !== null && (
-        <div className={`text-xl font-bold px-6 py-3 rounded-lg ${
-          (activeHand === 'left' ? leftIsCorrect : rightIsCorrect)
-            ? 'text-green-600 bg-green-100'
-            : 'text-red-600 bg-red-100'
-        }`}>
-          {(activeHand === 'left' ? leftIsCorrect : rightIsCorrect) ? '🎉 正解！' : '❌ ちがいます'}
+        <div className="flex gap-3 justify-center sm:justify-end">
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="px-4 py-2 rounded-lg font-semibold text-white bg-indigo-600 hover:bg-indigo-700 shadow"
+          >
+            ⚙️ 設定
+          </button>
+          <button
+            onClick={() => {
+              if (!audioInitialized) {
+                setAudioInitialized(true);
+              }
+              generateNewNote(activeHand);
+            }}
+            className="px-4 py-2 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow"
+          >
+            🎵 次の問題
+          </button>
         </div>
-      )}
-
-    {/* モーダル（設定） */}
-    <GameMenuSheetQuiz
-      isOpen={isModalOpen}
-      onClose={() => setIsModalOpen(false)}
-      activeHand={activeHand}
-      setActiveHand={setActiveHand}
-      mode={mode}
-      setMode={setMode}
-      onGoHome={()=>router.push("/")}
-    />
+      </div>
 
 
-  </div>
-);
+      {/* メインコンテンツエリア - レスポンシブレイアウト */}
+      <div className="flex-1 flex flex-col">
+        
+        {/* 縦画面（PC・スマホ縦）: 上下配置 */}
+        <div className="flex-1 flex flex-col lg:hidden">
+          
+          {/* 楽譜エリア（上部） - コンテンツに合わせてサイズ調整 */}
+          <div className="bg-white rounded-xl shadow-lg p-4 mb-4 flex-shrink-0">
+            <SheetMusic 
+              note={activeHand === 'left' ? leftQuizNote : rightQuizNote} 
+              hand={activeHand}
+            />
+          </div>
+
+        {/* 問題表示・判定エリア */}
+        <div className="flex justify-center items-center mt-4">
+          {(activeHand === 'left' ? leftIsCorrect : rightIsCorrect) !== null && (
+            <div className={`text-xl font-bold px-6 py-3 rounded-lg ${
+              (activeHand === 'left' ? leftIsCorrect : rightIsCorrect)
+                ? 'text-green-600 bg-green-100'
+                : 'text-red-600 bg-red-100'
+            }`}>
+              {(activeHand === 'left' ? leftIsCorrect : rightIsCorrect) ? '🎉 正解！' : '❌ ちがいます'}
+            </div>
+          )}
+        </div>
+
+          {/* キーボードエリア（下部） - 残りスペースを活用 */}
+          <div className="flex-1 flex flex-col justify-end min-h-0">
+            <div className="mb-3">
+              <KeyboardInput
+                onNoteInput={activeHand === 'left' ? handleLeftKeyPress : handleRightKeyPress}
+                enabled={true}
+                hand={activeHand}
+              />
+            </div>
+
+            <ExtendedPianoKeyboard
+              activeKeys={new Set(activeHand === 'left' ? leftUserAnswer : rightUserAnswer)}
+              userAnswer={activeHand === 'left' ? leftUserAnswer : rightUserAnswer}
+              disabledKeys={activeHand === 'left' ? leftDisabledKeys : rightDisabledKeys}
+              isPlayingQuiz={false}
+              onKeyPress={activeHand === 'left' ? handleLeftKeyPress : handleRightKeyPress}
+              activeHand={activeHand}
+            />
+          </div>
+        </div>
+
+        {/* 横画面（大画面・スマホ横）: 左右配置（楽譜1:キーボード2） */}
+        <div className="hidden lg:flex flex-1 gap-4">
+          
+          {/* 楽譜エリア（左側 - 1/3） */}
+          <div className="flex-1 bg-white rounded-xl shadow-lg p-4 min-h-0">
+            <SheetMusic 
+              note={activeHand === 'left' ? leftQuizNote : rightQuizNote} 
+              hand={activeHand}
+            />
+          </div>
+
+          {/* キーボードエリア（右側 - 2/3） */}
+          <div className="flex-[2] flex flex-col justify-center">
+            <div className="mb-3">
+              <KeyboardInput
+                onNoteInput={activeHand === 'left' ? handleLeftKeyPress : handleRightKeyPress}
+                enabled={true}
+                hand={activeHand}
+              />
+            </div>
+
+            <ExtendedPianoKeyboard
+              activeKeys={new Set(activeHand === 'left' ? leftUserAnswer : rightUserAnswer)}
+              userAnswer={activeHand === 'left' ? leftUserAnswer : rightUserAnswer}
+              disabledKeys={activeHand === 'left' ? leftDisabledKeys : rightDisabledKeys}
+              isPlayingQuiz={false}
+              onKeyPress={activeHand === 'left' ? handleLeftKeyPress : handleRightKeyPress}
+              activeHand={activeHand}
+            />
+          </div>
+        </div>
+
+
+      </div>
+
+      {/* モーダル（設定） */}
+      <GameMenuSheetQuiz
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        activeHand={activeHand}
+        setActiveHand={setActiveHand}
+        mode={mode}
+        setMode={setMode}
+        onGoHome={()=>router.push("/")}
+      />
+    </div>
+  );
 }
 
 export default Quiz;
